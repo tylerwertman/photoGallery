@@ -1,27 +1,46 @@
 import './App.css';
-import Navbar from './components/Navbar';
-import Button from './components/Button';
-import Grid from './components/Grid';
-import { useState } from 'react';
-import { useEffect } from 'react';
+import { Routes, Route } from 'react-router-dom'
+import { useState, useEffect } from 'react';
 import axios from 'axios'
+import Cookies from 'js-cookie';
+import jwtdecode from 'jwt-decode'
+import Navbar from './components/Navbar';
+import RegLog from './components/RegLog';
+import Main from './components/views/Main';
 
 function App() {
 
-  const [photos, setPhotos] = useState([])
+  const [loggedIn, setLoggedIn] = useState(false)
+  const [welcome, setWelcome] = useState()
   const [count, setCount] = useState(0)
-  useEffect(()=>{
-    axios.get('http://localhost:8000/api/get')
-    .then((res)=>{
-      setPhotos(res.data)
-    })
-    .catch((err)=>console.log("err", err))
-  },[count])
+  const [user, setUser] = useState()
+  const [darkMode, setDarkMode] = useState(false)
+
+  const cookieValue = Cookies.get('userToken');
+
+  useEffect(() => {
+    setCount(count + 1)
+    if (Cookies.get('darkMode') === undefined) Cookies.set('darkMode', false.toString(), { expires: 7 })
+    if (cookieValue) {
+      setWelcome(jwtdecode(cookieValue).name + " (@" + jwtdecode(cookieValue).displayName + ")")
+      setUser(jwtdecode(cookieValue))
+      setLoggedIn(true)
+    } else {
+      setWelcome("Guest")
+    }
+    // eslint-disable-next-line
+  }, []);
+
   return (
     <div className="App">
-      <Navbar/>
-      <Grid photos={photos}/>
-      <Button count={count} setCount={setCount}/>
+      <Navbar cookieValue={cookieValue} user={user} setUser={setUser} welcome={welcome} setWelcome={setWelcome} loggedIn={loggedIn} setLoggedIn={setLoggedIn} count={count} setCount={setCount} darkMode={darkMode} setDarkMode={setDarkMode}/>
+
+      <Routes>
+        <Route path="/" element={<RegLog setLoggedIn={setLoggedIn} count={count} setCount={setCount} />} />
+        <Route path="/Landing" element={<Main setLoggedIn={setLoggedIn} count={count} setCount={setCount} cookieValue={cookieValue}/>} />
+
+      </Routes>
+      
     </div>
   );
 }
